@@ -4,6 +4,18 @@
       "rev": "c573a15a62bd0bfd4006ee0849b24f5404395500",
       "src": "https://github.com/saghen/blink.cmp"
     },
+    "diffview.nvim": {
+      "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
+      "src": "https://github.com/sindrets/diffview.nvim"
+    },
+    "gitsigns.nvim": {
+      "rev": "31d6fb2d618bca1482b9f274751ead5f03461408",
+      "src": "https://github.com/lewis6991/gitsigns.nvim"
+    },
+    "neogit": {
+      "rev": "f8674ec894315c02449b61c9de9a116c5aafeb90",
+      "src": "https://github.com/NeogitOrg/neogit"
+    },
     "nvim": {
       "rev": "426dbebe06b5c69fd846ceb17b42e12f890aedf1",
       "src": "https://github.com/catppuccin/nvim"

@@ -7,6 +7,9 @@ vim.pack.add({
   "https://github.com/nvim-tree/nvim-web-devicons", -- Icons (nerd font)
   "https://github.com/nvim-telescope/telescope.nvim",
   "https://github.com/folke/which-key.nvim",
+  "https://github.com/NeogitOrg/neogit",
+  "https://github.com/sindrets/diffview.nvim",       -- Git diff views (neogit dependency, optional)
+  "https://github.com/lewis6991/gitsigns.nvim",      -- Git signs in the signcolumn
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -16,3 +19,4 @@ require("plugins.colorscheme")
 require("plugins.treesitter")
 require("plugins.blink")
 require("plugins.telescope")
+require("plugins.git")
