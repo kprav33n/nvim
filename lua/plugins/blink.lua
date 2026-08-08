@@ -4,6 +4,20 @@ require("blink.cmp").setup({
     documentation = {
       auto_show = true,
     },
+    trigger = {
+      prefetch_on_insert = false,
+    },
+  },
+
+  sources = {
+    default = { "lsp", "path", "supermaven", "snippets", "buffer" },
+    providers = {
+      supermaven = {
+        name = "supermaven",
+        module = "blink-cmp-supermaven",
+        async = true,
+      },
+    },
   },
 
   keymap = {
@@ -14,7 +28,18 @@ require("blink.cmp").setup({
     ['<C-e>'] = { 'cancel', 'fallback' },
     ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },
 
-    ['<Tab>'] = { 'snippet_forward', 'fallback' },
+    ['<Tab>'] = {
+      function(cmp)
+        local cp = require("supermaven-nvim.completion_preview")
+        if cp.has_suggestion() then
+          cp.on_accept_suggestion()
+          return true
+        end
+        return false
+      end,
+      'snippet_forward',
+      'fallback',
+    },
     ['<S-Tab>'] = { 'snippet_backward', 'fallback' },
 
     ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },

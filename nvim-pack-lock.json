@@ -1,5 +1,9 @@
 {
   "plugins": {
+    "blink-cmp-supermaven": {
+      "rev": "635ce12e9e2d2a5a483728ac764d0bc5b57af23b",
+      "src": "https://github.com/Huijiro/blink-cmp-supermaven"
+    },
     "blink.cmp": {
       "rev": "c573a15a62bd0bfd4006ee0849b24f5404395500",
       "src": "https://github.com/saghen/blink.cmp"
@@ -31,6 +35,10 @@
     "plenary.nvim": {
       "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
       "src": "https://github.com/nvim-lua/plenary.nvim"
+    },
+    "supermaven-nvim": {
+      "rev": "07d20fce48a5629686aefb0a7cd4b25e33947d50",
+      "src": "https://github.com/supermaven-inc/supermaven-nvim"
     },
     "telescope.nvim": {
       "rev": "471eebb1037899fd942cc0f52c012f8773505da1",

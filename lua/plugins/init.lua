@@ -10,6 +10,8 @@ vim.pack.add({
   "https://github.com/NeogitOrg/neogit",
   "https://github.com/sindrets/diffview.nvim",       -- Git diff views (neogit dependency, optional)
   "https://github.com/lewis6991/gitsigns.nvim",      -- Git signs in the signcolumn
+  "https://github.com/supermaven-inc/supermaven-nvim",
+  "https://github.com/Huijiro/blink-cmp-supermaven",
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -20,3 +22,4 @@ require("plugins.treesitter")
 require("plugins.blink")
 require("plugins.telescope")
 require("plugins.git")
+require("plugins.supermaven")
