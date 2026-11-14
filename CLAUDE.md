@@ -39,6 +39,7 @@ lua/
     blink.lua
     telescope.lua              -- includes its pickers + keymaps
     neo-tree.lua               -- file explorer + <leader>e keymaps
+    lualine.lua                -- global statusline (catppuccin theme, gitsigns diff)
     which-key.lua              -- includes group specs for other plugins
     colorscheme.lua            -- vim.cmd.colorscheme + (when added) catppuccin pack entry
 ```

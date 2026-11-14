@@ -14,6 +14,7 @@ vim.pack.add({
   "https://github.com/Huijiro/blink-cmp-supermaven",
   "https://github.com/MunifTanjim/nui.nvim",         -- UI components (neo-tree dependency)
   { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
+  "https://github.com/nvim-lualine/lualine.nvim",
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -26,3 +27,4 @@ require("plugins.telescope")
 require("plugins.git")
 require("plugins.supermaven")
 require("plugins.neo-tree")
+require("plugins.lualine")
