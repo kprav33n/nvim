@@ -17,6 +17,7 @@ vim.pack.add({
   { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
   "https://github.com/nvim-lualine/lualine.nvim",
   "https://github.com/neovim/nvim-lspconfig",        -- Server configs for vim.lsp.enable
+  "https://github.com/coder/claudecode.nvim",        -- Claude Code IDE integration
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -29,6 +30,7 @@ require("plugins.telescope")
 require("plugins.lsp")
 require("plugins.git")
 require("plugins.supermaven")
+require("plugins.claudecode")
 require("plugins.neo-tree")
 require("plugins.tabs")
 require("plugins.lualine")

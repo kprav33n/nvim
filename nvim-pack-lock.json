@@ -8,6 +8,10 @@
       "rev": "c573a15a62bd0bfd4006ee0849b24f5404395500",
       "src": "https://github.com/saghen/blink.cmp"
     },
+    "claudecode.nvim": {
+      "rev": "e864d9ddcd886154b3b824a90ce802e151acf268",
+      "src": "https://github.com/coder/claudecode.nvim"
+    },
     "diffview.nvim": {
       "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
       "src": "https://github.com/sindrets/diffview.nvim"
