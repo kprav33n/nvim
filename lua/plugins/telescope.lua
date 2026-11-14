@@ -1,6 +1,9 @@
 -- Telescope fuzzy finder.
 require("telescope").setup({})
 
+-- Route vim.ui.select (code actions, :PyVenv, ...) through telescope.
+require("telescope").load_extension("ui-select")
+
 local pickers = require("telescope.builtin")
 
 local actions = require("telescope.actions")

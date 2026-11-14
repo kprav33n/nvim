@@ -6,6 +6,7 @@ vim.pack.add({
   "https://github.com/nvim-lua/plenary.nvim",       -- Library dependency
   "https://github.com/nvim-tree/nvim-web-devicons", -- Icons (nerd font)
   "https://github.com/nvim-telescope/telescope.nvim",
+  "https://github.com/nvim-telescope/telescope-ui-select.nvim", -- vim.ui.select via telescope
   "https://github.com/folke/which-key.nvim",
   "https://github.com/NeogitOrg/neogit",
   "https://github.com/sindrets/diffview.nvim",       -- Git diff views (neogit dependency, optional)
