@@ -34,7 +34,27 @@ vim.opt.mouse = "a"
 -- Sync with OS clipboard.
 --  see `:help 'clipboard'`
 vim.opt.clipboard = "unnamedplus"
-vim.g.clipboard = 'osc52'
+
+-- Copy via OSC 52 (works over SSH). Paste returns the last copy instead of
+-- querying the terminal, which many terminals/tmux never answer (hangs on p).
+-- Paste from the system clipboard with the terminal's own paste key.
+local osc52 = require("vim.ui.clipboard.osc52")
+local last = {}
+local function copy(reg)
+  local send = osc52.copy(reg)
+  return function(lines, regtype)
+    last[reg] = { lines, regtype }
+    send(lines)
+  end
+end
+local function paste(reg)
+  return function() return last[reg] or { {}, "v" } end
+end
+vim.g.clipboard = {
+  name = "OSC 52 (copy only)",
+  copy = { ["+"] = copy("+"), ["*"] = copy("*") },
+  paste = { ["+"] = paste("+"), ["*"] = paste("*") },
+}
 
 -- Save undo history.
 vim.opt.undofile = true
