@@ -9,6 +9,8 @@ vim.keymap.set("n", "<leader>sf", pickers.find_files, { desc = "[S]earch [F]iles
 vim.keymap.set("n", "<leader>sw", pickers.grep_string, { desc = "[S]earch Current [W]ord", })
 vim.keymap.set("n", "<leader>sg", pickers.live_grep, { desc = "[S]earch by [G]rep", })
 vim.keymap.set("n", "<leader>sr", pickers.resume, { desc = "[S]earch [R]esume", })
+vim.keymap.set("n", "<leader>sd", pickers.diagnostics, { desc = "[S]earch [D]iagnostics", })
+vim.keymap.set("n", "<leader>s.", pickers.oldfiles, { desc = "[S]earch Recent Files ([.])", })
 
 vim.keymap.set("n", "<leader>sh", pickers.help_tags, { desc = "[S]earch [H]elp", })
 vim.keymap.set("n", "<leader>sm", pickers.man_pages, { desc = "[S]earch [M]anuals", })

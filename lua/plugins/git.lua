@@ -6,7 +6,7 @@ neogit.setup({})
 
 local pickers = require("telescope.builtin")
 
-vim.keymap.set("n", "<leader>gg", function() neogit.open() end, { desc = "[G]it [S]tatus (Neogit)" })
+vim.keymap.set("n", "<leader>gg", function() neogit.open() end, { desc = "[G]it Neo[G]it Status" })
 vim.keymap.set("n", "<leader>gc", function() neogit.open({ "commit" }) end, { desc = "[G]it [C]ommit" })
 vim.keymap.set("n", "<leader>gp", function() neogit.open({ "pull" }) end, { desc = "[G]it [P]ull" })
 vim.keymap.set("n", "<leader>gP", function() neogit.open({ "push" }) end, { desc = "[G]it [P]ush" })
