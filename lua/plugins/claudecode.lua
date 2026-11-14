@@ -16,6 +16,15 @@ vim.keymap.set("v", "<leader>as", "<cmd>ClaudeCodeSend<CR>", { desc = "[A]I [S]e
 vim.keymap.set("n", "<leader>aa", "<cmd>ClaudeCodeDiffAccept<CR>", { desc = "[A]I [A]ccept Diff" })
 vim.keymap.set("n", "<leader>ad", "<cmd>ClaudeCodeDiffDeny<CR>", { desc = "[A]I [D]eny Diff" })
 
+-- In neo-tree, add the file or directory under the cursor to Claude's context.
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("claudecode_tree", { clear = true }),
+  pattern = "neo-tree",
+  callback = function(ev)
+    vim.keymap.set("n", "<leader>as", "<cmd>ClaudeCodeTreeAdd<CR>", { buffer = ev.buf, desc = "[A]I [S]end File" })
+  end,
+})
+
 require("which-key").add({
   { "<leader>a", group = "[A]I", mode = { "n", "v" }, icon = { icon = "󰚩", color = "orange" } },
 })
