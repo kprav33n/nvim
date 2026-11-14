@@ -3,6 +3,13 @@ require("claudecode").setup({
   terminal = {
     provider = "native", -- No snacks.nvim; plain :terminal split.
   },
+  -- Review proposed edits side by side in their own tab, away from neo-tree,
+  -- with focus left on Claude's prompt. :w accepts, :q rejects.
+  diff_opts = {
+    layout = "vertical",
+    open_in_new_tab = true,
+    keep_terminal_focus = true,
+  },
 })
 
 -- Claude keymaps.
