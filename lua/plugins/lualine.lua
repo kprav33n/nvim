@@ -35,6 +35,7 @@ lualine.setup({
     -- Rounded "bubble" separators (nerd font glyphs as escapes so they survive edits).
     component_separators = { left = "\u{e0b5}", right = "\u{e0b7}" },
     section_separators = { left = "\u{e0b4}", right = "\u{e0b6}" },
+    always_show_tabline = false,
     disabled_filetypes = { statusline = { "dashboard", "alpha" } },
   },
   sections = {
@@ -57,6 +58,10 @@ lualine.setup({
     },
     lualine_y = { "progress" },
     lualine_z = { { "location", separator = { right = "\u{e0b4}" }, left_padding = 2 } },
+  },
+  -- Tab names (Greek letters, see plugins/tabs.lua); hidden with a single tab.
+  tabline = {
+    lualine_a = { { "tabs", mode = 1, max_length = vim.o.columns, show_modified_status = false } },
   },
   extensions = { "neo-tree", "quickfix", "man" },
 })
