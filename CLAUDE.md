@@ -16,6 +16,8 @@ This config uses modern APIs available in 0.12. When suggesting changes, prefer 
 ```
 init.lua                  -- everything (options, diagnostics, plugins, keymaps)
 nvim-pack-lock.json       -- vim.pack lockfile (auto-managed)
+claude/skills/neovim/     -- Claude Code skill for driving nvim over $NVIM;
+                             symlinked from ~/.claude/skills/neovim
 ```
 
 Installed plugins (via `vim.pack`): `nvim-treesitter`, `blink.cmp`, `plenary.nvim`, `nvim-web-devicons`, `telescope.nvim`, `which-key.nvim`.
