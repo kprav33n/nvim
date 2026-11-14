@@ -15,6 +15,7 @@ vim.pack.add({
   "https://github.com/MunifTanjim/nui.nvim",         -- UI components (neo-tree dependency)
   { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
   "https://github.com/nvim-lualine/lualine.nvim",
+  "https://github.com/neovim/nvim-lspconfig",        -- Server configs for vim.lsp.enable
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -24,6 +25,7 @@ require("plugins.colorscheme")
 require("plugins.treesitter")
 require("plugins.blink")
 require("plugins.telescope")
+require("plugins.lsp")
 require("plugins.git")
 require("plugins.supermaven")
 require("plugins.neo-tree")
