@@ -12,6 +12,8 @@ vim.pack.add({
   "https://github.com/lewis6991/gitsigns.nvim",      -- Git signs in the signcolumn
   "https://github.com/supermaven-inc/supermaven-nvim",
   "https://github.com/Huijiro/blink-cmp-supermaven",
+  "https://github.com/MunifTanjim/nui.nvim",         -- UI components (neo-tree dependency)
+  { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -23,3 +25,4 @@ require("plugins.blink")
 require("plugins.telescope")
 require("plugins.git")
 require("plugins.supermaven")
+require("plugins.neo-tree")
