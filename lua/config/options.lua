@@ -86,3 +86,14 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
 vim.opt.textwidth = 80
+
+-- Reload buffers changed on disk (e.g. by Claude Code or git).
+-- FocusGained needs `set -g focus-events on` in tmux.
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "TermLeave" }, {
+  group = vim.api.nvim_create_augroup("auto_checktime", { clear = true }),
+  callback = function()
+    -- :checktime is not allowed in the command-line window.
+    if vim.fn.getcmdwintype() == "" then vim.cmd.checktime() end
+  end,
+})
