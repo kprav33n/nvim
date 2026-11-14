@@ -12,6 +12,74 @@ vim.lsp.config("lua_ls", {
   },
 })
 
+-- Python interpreter inside a venv directory, if it has one.
+local function venv_python(dir)
+  local python = vim.fs.joinpath(dir, "bin", "python")
+  return vim.fn.executable(python) == 1 and python or nil
+end
+
+-- Candidate venvs: active one, project-local ones, then ~/.virtualenvs/*.
+local function find_venvs(root)
+  local found, seen = {}, {}
+  local function add(dir)
+    dir = vim.fs.normalize(dir)
+    if not seen[dir] and venv_python(dir) then
+      seen[dir] = true
+      table.insert(found, dir)
+    end
+  end
+  if vim.env.VIRTUAL_ENV then add(vim.env.VIRTUAL_ENV) end
+  for _, name in ipairs({ ".venv", "venv", "env" }) do
+    add(vim.fs.joinpath(root, name))
+  end
+  for name, kind in vim.fs.dir("~/.virtualenvs") do
+    if kind == "directory" then add(vim.fs.joinpath("~/.virtualenvs", name)) end
+  end
+  return found
+end
+
+-- Point basedpyright at the project's venv when none is active.
+vim.lsp.config("basedpyright", {
+  before_init = function(_, config)
+    local venv = find_venvs(config.root_dir or vim.fn.getcwd())[1]
+    if venv then
+      config.settings.python = config.settings.python or {}
+      config.settings.python.pythonPath = venv_python(venv)
+    end
+  end,
+})
+
+-- Switch the current buffer's basedpyright to another venv.
+local function set_venv(dir)
+  local python = venv_python(vim.fn.fnamemodify(dir, ":p"))
+  if not python then
+    vim.notify("No bin/python in " .. dir, vim.log.levels.ERROR)
+    return
+  end
+  local clients = vim.lsp.get_clients({ bufnr = 0, name = "basedpyright" })
+  if #clients == 0 then
+    vim.notify("basedpyright is not attached to this buffer", vim.log.levels.WARN)
+    return
+  end
+  for _, client in ipairs(clients) do
+    client.settings.python = client.settings.python or {}
+    client.settings.python.pythonPath = python
+    client:notify("workspace/didChangeConfiguration", { settings = client.settings })
+  end
+  vim.notify("Python venv: " .. dir)
+end
+
+vim.api.nvim_create_user_command("PyVenv", function(opts)
+  if opts.args ~= "" then return set_venv(opts.args) end
+  local client = vim.lsp.get_clients({ bufnr = 0, name = "basedpyright" })[1]
+  local root = client and client.root_dir or vim.fn.getcwd()
+  vim.ui.select(find_venvs(root), { prompt = "Python venv" }, function(dir)
+    if dir then set_venv(dir) end
+  end)
+end, { nargs = "?", complete = "dir", desc = "Pick the venv basedpyright uses" })
+
+vim.keymap.set("n", "<leader>sv", "<cmd>PyVenv<cr>", { desc = "[S]elect Python [V]env" })
+
 -- Enable only the servers that are installed.
 for _, name in ipairs(servers) do
   local cmd = vim.lsp.config[name] and vim.lsp.config[name].cmd
