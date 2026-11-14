@@ -18,8 +18,8 @@ local function venv_python(dir)
   return vim.fn.executable(python) == 1 and python or nil
 end
 
--- Candidate venvs: active one, project-local ones, then ~/.virtualenvs/*.
-local function find_venvs(root)
+-- Candidate venvs: active one, project-local ones, then (if asked) shared dirs.
+local function find_venvs(root, include_shared)
   local found, seen = {}, {}
   local function add(dir)
     dir = vim.fs.normalize(dir)
@@ -32,8 +32,10 @@ local function find_venvs(root)
   for _, name in ipairs({ ".venv", "venv", "env" }) do
     add(vim.fs.joinpath(root, name))
   end
-  for name, kind in vim.fs.dir("~/.virtualenvs") do
-    if kind == "directory" then add(vim.fs.joinpath("~/.virtualenvs", name)) end
+  for _, shared in ipairs(include_shared and { "~/venvs", "~/.virtualenvs" } or {}) do
+    for name, kind in vim.fs.dir(shared) do
+      if kind == "directory" then add(vim.fs.joinpath(shared, name)) end
+    end
   end
   return found
 end
@@ -73,7 +75,7 @@ vim.api.nvim_create_user_command("PyVenv", function(opts)
   if opts.args ~= "" then return set_venv(opts.args) end
   local client = vim.lsp.get_clients({ bufnr = 0, name = "basedpyright" })[1]
   local root = client and client.root_dir or vim.fn.getcwd()
-  vim.ui.select(find_venvs(root), { prompt = "Python venv" }, function(dir)
+  vim.ui.select(find_venvs(root, true), { prompt = "Python venv" }, function(dir)
     if dir then set_venv(dir) end
   end)
 end, { nargs = "?", complete = "dir", desc = "Pick the venv basedpyright uses" })
