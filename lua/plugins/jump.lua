@@ -4,6 +4,7 @@ local labels = "aoeuhtns" -- Label keys (Dvorak home row); nearest targets get t
 local overflow_labels = "idgcrl" -- Extra keys, added one at a time only to avoid three-key chords.
 local word_timeout = 500 -- Idle milliseconds that end word input.
 
+local M = {}
 local ns = vim.api.nvim_create_namespace("jump")
 vim.api.nvim_set_hl(0, "JumpLabel", { default = true, link = "IncSearch" })
 vim.api.nvim_set_hl(0, "JumpDim", { default = true, link = "Comment" })
@@ -211,9 +212,9 @@ local function jump(target, mode, opts)
   if mode == "n" then vim.cmd("normal! zv") end
 end
 
--- Label the targets `find` yields and jump to the chosen one. Options:
--- `linewise` for whole-line targets, `inclusive` to make an operator take the
--- target character too.
+-- Label the targets `find` yields and return the jump to the chosen one as a
+-- function, or nil when cancelled. Options: `linewise` for whole-line targets,
+-- `inclusive` to make an operator take the target character too.
 local function run(find, opts)
   opts = opts or {}
   local mode = current_mode()
@@ -227,7 +228,8 @@ local function run(find, opts)
     assign(targets)
     target = pick(targets, opts.linewise)
   end
-  if target then jump(target, mode, opts) end
+  if not target then return nil end
+  return function() jump(target, mode, opts) end
 end
 
 local function prompt(text)
@@ -290,27 +292,27 @@ local function read_text(label, max, word_start)
 end
 
 local function jump_line()
-  run(function(line) return { (line:find("%S") or 1) - 1 } end, { linewise = true })
+  return run(function(line) return { (line:find("%S") or 1) - 1 } end, { linewise = true })
 end
 
 local function jump_word()
   local word = read_text("Jump to word: ", nil, true)
-  if word then run(finder(word, true)) end
+  return word and run(finder(word, true))
 end
 
 local function jump_char()
   local char = read_text("Jump to char: ", 1)
-  if char then run(finder(char), { inclusive = true }) end
+  return char and run(finder(char), { inclusive = true })
 end
 
 local function jump_chars()
   local chars = read_text("Jump to chars: ", 2)
-  if chars then run(finder(chars)) end
+  return chars and run(finder(chars))
 end
 
 -- Every word start, with nothing to type first.
 local function jump_starts()
-  run(function(line)
+  return run(function(line)
     local cols = {}
     for col in line:gmatch("()[%w_\128-\255]+") do cols[#cols + 1] = col - 1 end
     return cols
@@ -319,17 +321,10 @@ end
 
 -- Every visible diagnostic.
 local function jump_diagnostic()
-  local by_buf = {}
-  run(function(_, lnum)
-    local buf = vim.api.nvim_get_current_buf()
-    if not by_buf[buf] then
-      by_buf[buf] = {}
-      for _, d in ipairs(vim.diagnostic.get(buf)) do
-        by_buf[buf][d.lnum + 1] = by_buf[buf][d.lnum + 1] or {}
-        by_buf[buf][d.lnum + 1][d.col] = true
-      end
-    end
-    return vim.tbl_keys(by_buf[buf][lnum] or {})
+  return run(function(_, lnum)
+    local cols = {}
+    for _, d in ipairs(vim.diagnostic.get(0, { lnum = lnum - 1 })) do cols[d.col] = true end
+    return vim.tbl_keys(cols)
   end)
 end
 
@@ -375,7 +370,7 @@ local function jump_node()
   local node = parser and vim.treesitter.get_node()
   if not node then
     vim.notify("No syntax tree here", vim.log.levels.WARN)
-    return
+    return nil
   end
 
   local mode, win = current_mode(), vim.api.nvim_get_current_win()
@@ -401,31 +396,57 @@ local function jump_node()
     seen[id] = true
     node = node:parent()
   end
-  if #targets == 0 then return end
+  if #targets == 0 then return nil end
 
   local target = targets[1]
   if #targets > 1 then
     assign(targets)
     target = pick(targets)
   end
-  if not target then return end
-  if mode == "x" then vim.cmd("normal! \27") end
-  vim.api.nvim_win_set_cursor(win, { target.range[1] + 1, target.range[2] })
-  vim.cmd("normal! v")
-  vim.api.nvim_win_set_cursor(win, { target.range[3] + 1, target.range[4] })
+  if not target then return nil end
+  return function()
+    if mode == "x" then vim.cmd("normal! \27") end
+    vim.api.nvim_win_set_cursor(win, { target.range[1] + 1, target.range[2] })
+    vim.cmd("normal! v")
+    vim.api.nvim_win_set_cursor(win, { target.range[3] + 1, target.range[4] })
+  end
 end
 
-local modes = { "n", "x", "o" }
-vim.keymap.set(modes, "<leader>jl", jump_line, { desc = "[J]ump to [L]ine" })
-vim.keymap.set(modes, "<leader>jw", jump_word, { desc = "[J]ump to [W]ord" })
-vim.keymap.set(modes, "<leader>jj", jump_word, { desc = "[J]ump to Word ([J])" })
-vim.keymap.set(modes, "<leader>jc", jump_char, { desc = "[J]ump to [C]haracter" })
-vim.keymap.set(modes, "<leader>jd", jump_diagnostic, { desc = "[J]ump to [D]iagnostic" })
-vim.keymap.set(modes, "<leader>jn", jump_node, { desc = "[J]ump to Syntax [N]ode" })
-vim.keymap.set(modes, "<leader>js", jump_starts, { desc = "[J]ump to Word [S]tart" })
-vim.keymap.set(modes, "<leader>jt", jump_chars, { desc = "[J]ump to [T]wo Characters" })
+local pending -- Jump chosen for the operator that is waiting on M.apply.
+
+-- Run the jump an operator is waiting on.
+function M.apply()
+  local act = pending
+  pending = nil
+  if act then act() end
+end
+
+-- Bind <leader>j{key} to a jump: `choose` shows the labels and returns the jump
+-- as a function, or nil when cancelled.
+local function map(key, choose, desc)
+  vim.keymap.set({ "n", "x" }, "<leader>j" .. key, function()
+    local act = choose()
+    if act then act() end
+  end, { desc = desc })
+  -- After an operator, an expr mapping lets a cancelled jump cancel the operator too.
+  vim.keymap.set("o", "<leader>j" .. key, function()
+    pending = choose()
+    return pending and "<Cmd>lua require('plugins.jump').apply()<CR>" or "<Esc>"
+  end, { expr = true, desc = desc })
+end
+
+map("l", jump_line, "[J]ump to [L]ine")
+map("w", jump_word, "[J]ump to [W]ord")
+map("j", jump_word, "[J]ump to Word ([J])")
+map("c", jump_char, "[J]ump to [C]haracter")
+map("t", jump_chars, "[J]ump to [T]wo Characters")
+map("s", jump_starts, "[J]ump to Word [S]tart")
+map("d", jump_diagnostic, "[J]ump to [D]iagnostic")
+map("n", jump_node, "[J]ump to Syntax [N]ode")
 vim.keymap.set("n", "<leader>jW", jump_window, { desc = "[J]ump to [W]indow" })
 
 require("which-key").add({
-  { "<leader>j", group = "[J]ump", mode = modes, icon = { icon = "󰆾", color = "blue" } },
+  { "<leader>j", group = "[J]ump", mode = { "n", "x", "o" }, icon = { icon = "󰆾", color = "blue" } },
 })
+
+return M
