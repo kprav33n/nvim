@@ -51,7 +51,7 @@ local function finder(needle, word_start)
   end
 end
 
--- Visible targets as { win, lnum, col, dist }, at the columns `find(line, lnum)`
+-- Visible targets as { win, lnum, col, dist, after }, at the columns `find(line, lnum)`
 -- returns for each line. `linewise` targets stand for their whole line.
 local function collect(wins, find, linewise)
   local targets = {}
@@ -69,7 +69,8 @@ local function collect(wins, find, linewise)
           if vcol <= leftcol or vcol > leftcol + width then return end
         end
         local dist = math.abs(lnum - cursor[1]) * 10000 + math.abs(col - cursor[2])
-        targets[#targets + 1] = { win = win, lnum = lnum, col = col, dist = dist }
+        local after = lnum > cursor[1] or (lnum == cursor[1] and col > cursor[2])
+        targets[#targets + 1] = { win = win, lnum = lnum, col = col, dist = dist, after = after }
       end
 
       local lnum, last = vim.fn.line("w0"), vim.fn.line("w$")
@@ -187,13 +188,16 @@ local function jump(target, mode, opts)
     vim.api.nvim_set_current_win(target.win)
   elseif mode == "o" and opts.linewise then
     vim.cmd("normal! V")
+  elseif mode == "o" and opts.inclusive and target.after then
+    vim.cmd("normal! v")
   end
   vim.api.nvim_win_set_cursor(target.win, { target.lnum, target.col })
   if mode == "n" then vim.cmd("normal! zv") end
 end
 
 -- Label the targets `find` yields and jump to the chosen one. Options:
--- `linewise` for whole-line targets.
+-- `linewise` for whole-line targets, `inclusive` to make an operator take the
+-- target character too.
 local function run(find, opts)
   opts = opts or {}
   local mode = current_mode()
@@ -280,7 +284,7 @@ end
 
 local function jump_char()
   local char = read_text("Jump to char: ", 1)
-  if char then run(finder(char)) end
+  if char then run(finder(char), { inclusive = true }) end
 end
 
 local function jump_chars()
