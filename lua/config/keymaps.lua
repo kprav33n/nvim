@@ -31,6 +31,12 @@ vim.api.nvim_create_autocmd("WinEnter", {
   end,
 })
 
+-- Move the line or selection up and down, re-indenting as it goes.
+vim.keymap.set("n", "<M-S-Down>", "<Cmd>silent! move .+1<CR>==", { desc = "Move line down" })
+vim.keymap.set("n", "<M-S-Up>", "<Cmd>silent! move .-2<CR>==", { desc = "Move line up" })
+vim.keymap.set("x", "<M-S-Down>", ":<C-u>silent! '<,'>move '>+1<CR>gv=gv", { silent = true, desc = "Move selection down" })
+vim.keymap.set("x", "<M-S-Up>", ":<C-u>silent! '<,'>move '<-2<CR>gv=gv", { silent = true, desc = "Move selection up" })
+
 -- Briefly highlight yanked text.
 vim.api.nvim_create_autocmd("TextYankPost", {
   group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
