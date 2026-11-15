@@ -306,11 +306,28 @@ local function jump_starts()
   end)
 end
 
+-- Every visible diagnostic.
+local function jump_diagnostic()
+  local by_buf = {}
+  run(function(_, lnum)
+    local buf = vim.api.nvim_get_current_buf()
+    if not by_buf[buf] then
+      by_buf[buf] = {}
+      for _, d in ipairs(vim.diagnostic.get(buf)) do
+        by_buf[buf][d.lnum + 1] = by_buf[buf][d.lnum + 1] or {}
+        by_buf[buf][d.lnum + 1][d.col] = true
+      end
+    end
+    return vim.tbl_keys(by_buf[buf][lnum] or {})
+  end)
+end
+
 local modes = { "n", "x", "o" }
 vim.keymap.set(modes, "<leader>jl", jump_line, { desc = "[J]ump to [L]ine" })
 vim.keymap.set(modes, "<leader>jw", jump_word, { desc = "[J]ump to [W]ord" })
 vim.keymap.set(modes, "<leader>jj", jump_word, { desc = "[J]ump to Word ([J])" })
 vim.keymap.set(modes, "<leader>jc", jump_char, { desc = "[J]ump to [C]haracter" })
+vim.keymap.set(modes, "<leader>jd", jump_diagnostic, { desc = "[J]ump to [D]iagnostic" })
 vim.keymap.set(modes, "<leader>js", jump_starts, { desc = "[J]ump to Word [S]tart" })
 vim.keymap.set(modes, "<leader>jt", jump_chars, { desc = "[J]ump to [T]wo Characters" })
 
