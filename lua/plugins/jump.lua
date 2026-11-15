@@ -5,6 +5,8 @@ local overflow_labels = "idgcrl" -- Extra keys, added one at a time only to avoi
 local word_timeout = 500 -- Idle milliseconds that end word input.
 
 local M = {}
+local pending -- Jump chosen for the operator that is waiting on M.apply.
+local last -- Redoes the latest operator jump from the new cursor, for `.`.
 local ns = vim.api.nvim_create_namespace("jump")
 vim.api.nvim_set_hl(0, "JumpLabel", { default = true, link = "IncSearch" })
 vim.api.nvim_set_hl(0, "JumpDim", { default = true, link = "Comment" })
@@ -229,7 +231,23 @@ local function run(find, opts)
     target = pick(targets, opts.linewise)
   end
   if not target then return nil end
-  return function() jump(target, mode, opts) end
+
+  -- `.` goes to the target as far from the cursor, in the same direction.
+  local nth = 0
+  for _, t in ipairs(targets) do
+    if t.win == target.win and t.after == target.after then nth = nth + 1 end
+    if t == target then break end
+  end
+  return function()
+    jump(target, mode, opts)
+    if mode ~= "o" then return end
+    last = function()
+      local again = vim.tbl_filter(function(t)
+        return t.after == target.after
+      end, collect({ vim.api.nvim_get_current_win() }, find, opts.linewise))
+      if again[nth] then jump(again[nth], mode, opts) end
+    end
+  end
 end
 
 local function prompt(text)
@@ -362,18 +380,14 @@ local function jump_window()
   if target then vim.api.nvim_set_current_win(target.win) end
 end
 
--- Label the syntax nodes around the cursor and select the chosen one. A label
--- sits at its node's start, or at its end when the start is taken or off screen.
-local function jump_node()
+-- Syntax nodes around the cursor, innermost first, as targets with a `range`.
+-- A label sits at its node's start, or at its end when the start is taken or
+-- off screen.
+local function node_targets()
   local parser = vim.treesitter.get_parser(0, nil, { error = false })
   if parser then parser:parse() end
   local node = parser and vim.treesitter.get_node()
-  if not node then
-    vim.notify("No syntax tree here", vim.log.levels.WARN)
-    return nil
-  end
-
-  local mode, win = current_mode(), vim.api.nvim_get_current_win()
+  local win = vim.api.nvim_get_current_win()
   local top, bottom = vim.fn.line("w0"), vim.fn.line("w$")
   local targets, taken, seen = {}, {}, {}
   while node do
@@ -396,27 +410,46 @@ local function jump_node()
     seen[id] = true
     node = node:parent()
   end
-  if #targets == 0 then return nil end
+  return targets
+end
 
+local function select_range(range, mode)
+  if mode == "x" then vim.cmd("normal! \27") end
+  vim.api.nvim_win_set_cursor(0, { range[1] + 1, range[2] })
+  vim.cmd("normal! v")
+  vim.api.nvim_win_set_cursor(0, { range[3] + 1, range[4] })
+end
+
+-- Label the syntax nodes around the cursor and select the chosen one.
+local function jump_node()
+  local mode, targets = current_mode(), node_targets()
+  if #targets == 0 then
+    vim.notify("No syntax node here", vim.log.levels.WARN)
+    return nil
+  end
   local target = targets[1]
   if #targets > 1 then
     assign(targets)
     target = pick(targets)
   end
   if not target then return nil end
+
+  local nth = vim.fn.index(targets, target) + 1
   return function()
-    if mode == "x" then vim.cmd("normal! \27") end
-    vim.api.nvim_win_set_cursor(win, { target.range[1] + 1, target.range[2] })
-    vim.cmd("normal! v")
-    vim.api.nvim_win_set_cursor(win, { target.range[3] + 1, target.range[4] })
+    select_range(target.range, mode)
+    if mode ~= "o" then return end
+    -- `.` takes the node as many levels out from the new cursor.
+    last = function()
+      local again = node_targets()[nth]
+      if again then select_range(again.range, mode) end
+    end
   end
 end
 
-local pending -- Jump chosen for the operator that is waiting on M.apply.
-
--- Run the jump an operator is waiting on.
+-- Run the jump an operator is waiting on; with none waiting, this is `.`
+-- repeating the previous one.
 function M.apply()
-  local act = pending
+  local act = pending or last
   pending = nil
   if act then act() end
 end
