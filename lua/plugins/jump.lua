@@ -6,6 +6,7 @@ local word_timeout = 500 -- Idle milliseconds that end word input.
 local ns = vim.api.nvim_create_namespace("jump")
 vim.api.nvim_set_hl(0, "JumpLabel", { default = true, link = "IncSearch" })
 vim.api.nvim_set_hl(0, "JumpDim", { default = true, link = "Comment" })
+vim.api.nvim_set_hl(0, "JumpMatch", { default = true, link = "Search" })
 
 local esc, cr, bs = vim.keycode("<Esc>"), vim.keycode("<CR>"), vim.keycode("<BS>")
 
@@ -223,41 +224,58 @@ local function getkey(timeout)
   return key
 end
 
--- Read text until <CR> or an idle pause; nil on <Esc> or when left empty.
-local function read_word()
-  local word = ""
-  while true do
-    prompt("Jump to word: " .. word)
-    local ok, key = pcall(getkey, word ~= "" and word_timeout or nil)
-    if not ok or key == esc then return nil end
-    if key == "" or key == cr then break end
-    if key == bs then
-      word = vim.fn.strcharpart(word, 0, vim.fn.strchars(word) - 1)
-    elseif vim.fn.strdisplaywidth(key) > 0 and key:byte() ~= 0x80 then
-      word = word .. key
-    end
-  end
-  return word ~= "" and word or nil
-end
+-- Read the text to jump to, highlighting its matches as it is typed. Ends at
+-- `max` characters, on <CR>, or after an idle pause when there is no `max`.
+-- Returns nil on <Esc> or when left empty.
+local function read_text(label, max, word_start)
+  local text, find, wins = "", nil, {}
+  for _, win in ipairs(target_wins(current_mode())) do wins[win] = true end
+  vim.api.nvim_set_decoration_provider(ns, {
+    on_line = function(_, win, buf, row)
+      if not find or not wins[win] then return end
+      local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ""
+      for _, col in ipairs(find(line)) do
+        vim.api.nvim_buf_set_extmark(buf, ns, row, col, {
+          ephemeral = true,
+          priority = 1000,
+          end_col = math.min(col + #text, #line),
+          hl_group = "JumpMatch",
+        })
+      end
+    end,
+  })
 
-local function read_char()
-  prompt("Jump to char: ")
-  local ok, key = pcall(getkey)
-  if not ok or key == esc or key:byte() == 0x80 then return nil end
-  return key
+  local ok, done = pcall(function()
+    while true do
+      find = text ~= "" and finder(text, word_start) or nil
+      vim.cmd.redraw({ bang = true })
+      prompt(label .. text)
+      if max and vim.fn.strchars(text) >= max then return true end
+      local key = getkey(not max and text ~= "" and word_timeout or nil)
+      if key == esc then return false end
+      if key == "" or key == cr then return true end
+      if key == bs then
+        text = vim.fn.strcharpart(text, 0, vim.fn.strchars(text) - 1)
+      elseif vim.fn.strdisplaywidth(key) > 0 and key:byte() ~= 0x80 then
+        text = text .. key
+      end
+    end
+  end)
+  vim.api.nvim_set_decoration_provider(ns, {})
+  vim.cmd.redraw({ bang = true })
+  prompt("")
+  return ok and done and text ~= "" and text or nil
 end
 
 local function jump_line() run(nil) end
 
 local function jump_word()
-  local word = read_word()
-  prompt("")
+  local word = read_text("Jump to word: ", nil, true)
   if word then run(finder(word, true)) end
 end
 
 local function jump_char()
-  local char = read_char()
-  prompt("")
+  local char = read_text("Jump to char: ", 1)
   if char then run(finder(char)) end
 end
 
