@@ -97,3 +97,6 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "TermLeav
     if vim.fn.getcmdwintype() == "" then vim.cmd.checktime() end
   end,
 })
+
+-- Experimental messages and command-line UI (no "Press ENTER" prompts).
+require("vim._core.ui2").enable()
