@@ -51,8 +51,9 @@ local function finder(needle, word_start)
   end
 end
 
--- Visible targets as { win, lnum, col, dist }. Without `find`, one per line.
-local function collect(wins, find)
+-- Visible targets as { win, lnum, col, dist }, at the columns `find(line, lnum)`
+-- returns for each line. `linewise` targets stand for their whole line.
+local function collect(wins, find, linewise)
   local targets = {}
   local cur_win = vim.api.nvim_get_current_win()
   for _, win in ipairs(wins) do
@@ -62,8 +63,8 @@ local function collect(wins, find)
       local width = info.width - info.textoff
       local function add(lnum, col)
         local here = win == cur_win and lnum == cursor[1]
-        if here and (not find or col == cursor[2]) then return end
-        if find and not vim.wo.wrap then
+        if here and (linewise or col == cursor[2]) then return end
+        if not linewise and not vim.wo.wrap then
           local vcol = vim.fn.virtcol({ lnum, col + 1 })
           if vcol <= leftcol or vcol > leftcol + width then return end
         end
@@ -75,10 +76,8 @@ local function collect(wins, find)
       while lnum <= last do
         local fold_end = vim.fn.foldclosedend(lnum)
         local line = vim.fn.getline(lnum)
-        if not find then
-          add(lnum, (line:find("%S") or 1) - 1)
-        elseif fold_end == -1 then
-          for _, col in ipairs(find(line)) do add(lnum, col) end
+        if linewise or fold_end == -1 then
+          for _, col in ipairs(find(line, lnum)) do add(lnum, col) end
         end
         lnum = (fold_end == -1 and lnum or fold_end) + 1
       end
@@ -182,20 +181,23 @@ local function pick(targets, linewise)
   return ok and choice or nil
 end
 
-local function jump(target, mode, linewise)
+local function jump(target, mode, opts)
   if mode == "n" then
     vim.cmd("normal! m'")
     vim.api.nvim_set_current_win(target.win)
-  elseif mode == "o" and linewise then
+  elseif mode == "o" and opts.linewise then
     vim.cmd("normal! V")
   end
   vim.api.nvim_win_set_cursor(target.win, { target.lnum, target.col })
   if mode == "n" then vim.cmd("normal! zv") end
 end
 
-local function run(find)
-  local mode, linewise = current_mode(), find == nil
-  local targets = collect(target_wins(mode), find)
+-- Label the targets `find` yields and jump to the chosen one. Options:
+-- `linewise` for whole-line targets.
+local function run(find, opts)
+  opts = opts or {}
+  local mode = current_mode()
+  local targets = collect(target_wins(mode), find, opts.linewise)
   if #targets == 0 then
     vim.notify("No jump targets", vim.log.levels.WARN)
     return
@@ -203,9 +205,9 @@ local function run(find)
   local target = targets[1]
   if #targets > 1 then
     assign(targets)
-    target = pick(targets, linewise)
+    target = pick(targets, opts.linewise)
   end
-  if target then jump(target, mode, linewise) end
+  if target then jump(target, mode, opts) end
 end
 
 local function prompt(text)
@@ -267,7 +269,9 @@ local function read_text(label, max, word_start)
   return ok and done and text ~= "" and text or nil
 end
 
-local function jump_line() run(nil) end
+local function jump_line()
+  run(function(line) return { (line:find("%S") or 1) - 1 } end, { linewise = true })
+end
 
 local function jump_word()
   local word = read_text("Jump to word: ", nil, true)
