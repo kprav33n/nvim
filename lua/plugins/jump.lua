@@ -6,6 +6,7 @@ local word_timeout = 500 -- Idle milliseconds that end word input.
 
 local M = {}
 local pending -- Jump chosen for the operator that is waiting on M.apply.
+local remote_op -- Operator and register a remote jump reruns at its target.
 local last -- Redoes the latest operator jump from the new cursor, for `.`.
 local ns = vim.api.nvim_create_namespace("jump")
 vim.api.nvim_set_hl(0, "JumpLabel", { default = true, link = "IncSearch" })
@@ -454,6 +455,34 @@ function M.apply()
   if act then act() end
 end
 
+-- Jump to a typed word in any split, start the cancelled operator again there
+-- for the motion typed next, then return to where it began.
+function M.remote()
+  local op, reg = unpack(remote_op)
+  local word = read_text("Remote word: ", nil, true)
+  local act = word and run(finder(word, true))
+  if not act then return end
+
+  local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+  local cursor = vim.api.nvim_win_get_cursor(win)
+  local mark = vim.api.nvim_buf_set_extmark(buf, ns, cursor[1] - 1, cursor[2], {})
+  act()
+  vim.api.nvim_feedkeys('"' .. reg .. op, "n", false)
+  -- Back in Normal mode the operator, and any insert it began, is over.
+  vim.api.nvim_create_autocmd("ModeChanged", {
+    pattern = "*:n",
+    once = true,
+    callback = vim.schedule_wrap(function()
+      local pos = vim.api.nvim_buf_get_extmark_by_id(buf, ns, mark, {})
+      vim.api.nvim_buf_del_extmark(buf, ns, mark)
+      if pos[1] and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
+        vim.api.nvim_set_current_win(win)
+        vim.api.nvim_win_set_cursor(win, { pos[1] + 1, pos[2] })
+      end
+    end),
+  })
+end
+
 -- Bind <leader>j{key} to a jump: `choose` shows the labels and returns the jump
 -- as a function, or nil when cancelled.
 local function map(key, choose, desc)
@@ -477,6 +506,11 @@ map("s", jump_starts, "[J]ump to Word [S]tart")
 map("d", jump_diagnostic, "[J]ump to [D]iagnostic")
 map("n", jump_node, "[J]ump to Syntax [N]ode")
 vim.keymap.set("n", "<leader>jW", jump_window, { desc = "[J]ump to [W]indow" })
+-- The operator is cancelled here and started again at the target.
+vim.keymap.set("o", "<leader>jr", function()
+  remote_op = { vim.v.operator, vim.v.register }
+  return "<Esc><Cmd>lua require('plugins.jump').remote()<CR>"
+end, { expr = true, desc = "[J]ump [R]emote: Operate at a Word, Then Return" })
 
 require("which-key").add({
   { "<leader>j", group = "[J]ump", mode = { "n", "x", "o" }, icon = { icon = "󰆾", color = "blue" } },
