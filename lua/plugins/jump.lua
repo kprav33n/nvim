@@ -1,5 +1,6 @@
--- Quick jump: label lines, words or characters in the visible windows, then
--- jump to the one whose label is typed.
+-- Quick jump: label targets in the visible windows, then jump to the one whose
+-- label is typed. Targets are lines, typed words or characters, word starts,
+-- diagnostics, syntax nodes or splits. Jumps also work as motions.
 local labels = "aoeuhtns" -- Label keys (Dvorak home row); nearest targets get the shortest labels.
 local overflow_labels = "idgcrl" -- Extra keys, added one at a time only to avoid three-key chords.
 local word_timeout = 500 -- Idle milliseconds that end word input.
