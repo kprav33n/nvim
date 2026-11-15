@@ -44,6 +44,7 @@ lua/
     lualine.lua                -- global statusline (catppuccin theme, gitsigns diff)
     claudecode.lua             -- Claude Code IDE integration + <leader>a keymaps
     jump.lua                   -- custom label jumps (no plugin) + <leader>j keymaps
+    flash.lua                  -- flash.nvim labelled jumps on s/S/r/R
     which-key.lua              -- includes group specs for other plugins
     colorscheme.lua            -- vim.cmd.colorscheme + (when added) catppuccin pack entry
 ```

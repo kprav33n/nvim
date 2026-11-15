@@ -18,6 +18,7 @@ vim.pack.add({
   "https://github.com/nvim-lualine/lualine.nvim",
   "https://github.com/neovim/nvim-lspconfig",        -- Server configs for vim.lsp.enable
   "https://github.com/coder/claudecode.nvim",        -- Claude Code IDE integration
+  "https://github.com/folke/flash.nvim",             -- Labelled jumps
 }, { confirm = false })
 
 -- which-key first so other plugin modules can call which-key.add() for their group specs.
@@ -34,4 +35,5 @@ require("plugins.claudecode")
 require("plugins.neo-tree")
 require("plugins.tabs")
 require("plugins.jump")
+require("plugins.flash")
 require("plugins.lualine")
