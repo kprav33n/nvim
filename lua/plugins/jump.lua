@@ -128,6 +128,25 @@ local function assign(targets)
   end
 end
 
+-- Read keys until they spell one target's label; nil on any other key.
+-- `show(typed)` redraws the labels before each key.
+local function read_label(targets, show)
+  local ok, choice = pcall(function()
+    local typed = ""
+    while true do
+      show(typed)
+      typed = typed .. vim.fn.getcharstr()
+      local live = false
+      for _, t in ipairs(targets) do
+        if t.label == typed then return t end
+        live = live or vim.startswith(t.label, typed)
+      end
+      if not live then return nil end
+    end
+  end)
+  return ok and choice or nil
+end
+
 -- Show the labels and read keys until one target is chosen; nil on cancel.
 local function pick(targets, linewise)
   local rows, typed = {}, ""
@@ -170,21 +189,13 @@ local function pick(targets, linewise)
     end,
   })
 
-  local ok, choice = pcall(function()
-    while true do
-      vim.cmd.redraw({ bang = true })
-      typed = typed .. vim.fn.getcharstr()
-      local live = false
-      for _, t in ipairs(targets) do
-        if t.label == typed then return t end
-        live = live or vim.startswith(t.label, typed)
-      end
-      if not live then return nil end
-    end
+  local choice = read_label(targets, function(keys)
+    typed = keys
+    vim.cmd.redraw({ bang = true })
   end)
   vim.api.nvim_set_decoration_provider(ns, {})
   vim.cmd.redraw({ bang = true })
-  return ok and choice or nil
+  return choice
 end
 
 local function jump(target, mode, opts)
@@ -322,6 +333,40 @@ local function jump_diagnostic()
   end)
 end
 
+-- Label each other split in a float at its centre and focus the chosen one.
+local function jump_window()
+  local cur, targets, floats = vim.api.nvim_get_current_win(), {}, {}
+  for _, win in ipairs(target_wins("n")) do
+    if win ~= cur then targets[#targets + 1] = { win = win } end
+  end
+  local target = targets[1]
+  if #targets > 1 then
+    assign(targets)
+    for _, t in ipairs(targets) do
+      local buf = vim.api.nvim_create_buf(false, true)
+      vim.bo[buf].bufhidden = "wipe"
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "", "  " .. t.label .. "  ", "" })
+      local width, height = #t.label + 4, 3
+      local float = vim.api.nvim_open_win(buf, false, {
+        relative = "win",
+        win = t.win,
+        row = math.max(math.floor((vim.api.nvim_win_get_height(t.win) - height) / 2), 0),
+        col = math.max(math.floor((vim.api.nvim_win_get_width(t.win) - width) / 2), 0),
+        width = width,
+        height = height,
+        style = "minimal",
+        focusable = false,
+        noautocmd = true,
+      })
+      vim.wo[float].winhighlight = "NormalFloat:JumpLabel"
+      floats[#floats + 1] = float
+    end
+    target = read_label(targets, function() vim.cmd.redraw() end)
+    for _, float in ipairs(floats) do vim.api.nvim_win_close(float, true) end
+  end
+  if target then vim.api.nvim_set_current_win(target.win) end
+end
+
 local modes = { "n", "x", "o" }
 vim.keymap.set(modes, "<leader>jl", jump_line, { desc = "[J]ump to [L]ine" })
 vim.keymap.set(modes, "<leader>jw", jump_word, { desc = "[J]ump to [W]ord" })
@@ -330,6 +375,7 @@ vim.keymap.set(modes, "<leader>jc", jump_char, { desc = "[J]ump to [C]haracter" 
 vim.keymap.set(modes, "<leader>jd", jump_diagnostic, { desc = "[J]ump to [D]iagnostic" })
 vim.keymap.set(modes, "<leader>js", jump_starts, { desc = "[J]ump to Word [S]tart" })
 vim.keymap.set(modes, "<leader>jt", jump_chars, { desc = "[J]ump to [T]wo Characters" })
+vim.keymap.set("n", "<leader>jW", jump_window, { desc = "[J]ump to [W]indow" })
 
 require("which-key").add({
   { "<leader>j", group = "[J]ump", mode = modes, icon = { icon = "󰆾", color = "blue" } },
