@@ -1,10 +1,11 @@
 -- Quick jump: label lines, words or characters in the visible windows, then
 -- jump to the one whose label is typed.
 local labels = "aoeuhtns" -- Label keys (Dvorak home row); nearest targets get the shortest labels.
-local word_timeout = 1000 -- Idle milliseconds that end word input.
+local word_timeout = 500 -- Idle milliseconds that end word input.
 
 local ns = vim.api.nvim_create_namespace("jump")
 vim.api.nvim_set_hl(0, "JumpLabel", { default = true, link = "IncSearch" })
+vim.api.nvim_set_hl(0, "JumpDim", { default = true, link = "Comment" })
 
 local esc, cr, bs = vim.keycode("<Esc>"), vim.keycode("<CR>"), vim.keycode("<BS>")
 
@@ -128,9 +129,17 @@ local function pick(targets, linewise)
   -- Ephemeral marks, so a buffer shown in two windows gets separate labels.
   vim.api.nvim_set_decoration_provider(ns, {
     on_line = function(_, win, buf, row)
+      if not rows[win] then return end
+      -- Dim everything but the labels.
+      vim.api.nvim_buf_set_extmark(buf, ns, row, 0, {
+        ephemeral = true,
+        priority = 999,
+        end_row = row + 1,
+        hl_group = "JumpDim",
+      })
       local live = vim.tbl_filter(function(t)
         return vim.startswith(t.label, typed)
-      end, rows[win] and rows[win][row] or {})
+      end, rows[win][row] or {})
       for i, t in ipairs(live) do
         -- Don't run into the next label on the line.
         local room = live[i + 1] and live[i + 1].col - t.col or #t.label
@@ -245,6 +254,7 @@ end
 local modes = { "n", "x", "o" }
 vim.keymap.set(modes, "<leader>jl", jump_line, { desc = "[J]ump to [L]ine" })
 vim.keymap.set(modes, "<leader>jw", jump_word, { desc = "[J]ump to [W]ord" })
+vim.keymap.set(modes, "<leader>jj", jump_word, { desc = "[J]ump to Word ([J])" })
 vim.keymap.set(modes, "<leader>jc", jump_char, { desc = "[J]ump to [C]haracter" })
 
 require("which-key").add({
