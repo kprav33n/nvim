@@ -26,16 +26,25 @@ local function target_wins(mode)
   end, vim.api.nvim_tabpage_list_wins(0))
 end
 
+-- Whether byte `i` begins a word: after a non-alphanumeric or on a camelCase hump.
+local function starts_word(line, i)
+  local prev, cur = line:sub(i - 1, i - 1), line:sub(i, i)
+  if not prev:find("[%w\128-\255]") then return true end
+  return prev:find("%l") ~= nil and cur:find("%u") ~= nil
+end
+
 -- Matcher returning the 0-based byte columns of `needle` in a line. Smartcase:
--- case only matters when the needle has a capital.
-local function finder(needle)
+-- case only matters when the needle has a capital. With `word_start`, a needle
+-- that begins with a letter or digit only matches at the start of a word.
+local function finder(needle, word_start)
   local fold = needle == vim.fn.tolower(needle)
+  word_start = word_start and needle:find("^[%w\128-\255]") ~= nil
   return function(line)
     local cols, hay, from = {}, fold and vim.fn.tolower(line) or line, 1
     while true do
       local s, e = hay:find(needle, from, true)
       if not s then return cols end
-      cols[#cols + 1] = s - 1
+      if not word_start or starts_word(line, s) then cols[#cols + 1] = s - 1 end
       from = e + 1
     end
   end
@@ -243,7 +252,7 @@ local function jump_line() run(nil) end
 local function jump_word()
   local word = read_word()
   prompt("")
-  if word then run(finder(word)) end
+  if word then run(finder(word, true)) end
 end
 
 local function jump_char()
