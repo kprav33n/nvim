@@ -26,13 +26,14 @@ local function target_wins(mode)
   end, vim.api.nvim_tabpage_list_wins(0))
 end
 
--- Matcher returning the 0-based byte columns of `needle` in a line, ignoring case.
+-- Matcher returning the 0-based byte columns of `needle` in a line. Smartcase:
+-- case only matters when the needle has a capital.
 local function finder(needle)
-  needle = vim.fn.tolower(needle)
+  local fold = needle == vim.fn.tolower(needle)
   return function(line)
-    local cols, lower, from = {}, vim.fn.tolower(line), 1
+    local cols, hay, from = {}, fold and vim.fn.tolower(line) or line, 1
     while true do
-      local s, e = lower:find(needle, from, true)
+      local s, e = hay:find(needle, from, true)
       if not s then return cols end
       cols[#cols + 1] = s - 1
       from = e + 1
