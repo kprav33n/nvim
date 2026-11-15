@@ -288,11 +288,21 @@ local function jump_chars()
   if chars then run(finder(chars)) end
 end
 
+-- Every word start, with nothing to type first.
+local function jump_starts()
+  run(function(line)
+    local cols = {}
+    for col in line:gmatch("()[%w_\128-\255]+") do cols[#cols + 1] = col - 1 end
+    return cols
+  end)
+end
+
 local modes = { "n", "x", "o" }
 vim.keymap.set(modes, "<leader>jl", jump_line, { desc = "[J]ump to [L]ine" })
 vim.keymap.set(modes, "<leader>jw", jump_word, { desc = "[J]ump to [W]ord" })
 vim.keymap.set(modes, "<leader>jj", jump_word, { desc = "[J]ump to Word ([J])" })
 vim.keymap.set(modes, "<leader>jc", jump_char, { desc = "[J]ump to [C]haracter" })
+vim.keymap.set(modes, "<leader>js", jump_starts, { desc = "[J]ump to Word [S]tart" })
 vim.keymap.set(modes, "<leader>jt", jump_chars, { desc = "[J]ump to [T]wo Characters" })
 
 require("which-key").add({
