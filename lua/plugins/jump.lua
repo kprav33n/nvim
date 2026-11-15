@@ -1,6 +1,7 @@
 -- Quick jump: label lines, words or characters in the visible windows, then
 -- jump to the one whose label is typed.
 local labels = "aoeuhtns" -- Label keys (Dvorak home row); nearest targets get the shortest labels.
+local overflow_labels = "idgcrl" -- Extra keys, added one at a time only to avoid three-key chords.
 local word_timeout = 500 -- Idle milliseconds that end word input.
 
 local ns = vim.api.nvim_create_namespace("jump")
@@ -99,6 +100,10 @@ end
 -- Give each target a prefix-free chord, using as many short ones as possible.
 local function assign(targets)
   local keys = vim.split(labels, "")
+  for _, key in ipairs(vim.split(overflow_labels, "", { trimempty = true })) do
+    if #keys * #keys >= #targets then break end
+    keys[#keys + 1] = key
+  end
   local len, cap = 1, #keys
   while cap < #targets do len, cap = len + 1, cap * #keys end
 
