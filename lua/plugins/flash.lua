@@ -2,7 +2,8 @@
 local flash = require("flash")
 
 flash.setup({
-  labels = "aoeuhtnsidgcrlpyfmwvbkjxqz", -- Dvorak home row first.
+  labels = "aoeuhtnsid", -- Dvorak home row only.
+  label = { uppercase = false },
 })
 
 vim.keymap.set({ "n", "x", "o" }, "s", function() flash.jump() end, { desc = "Flash" })
