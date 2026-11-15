@@ -99,5 +99,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
     local pickers = require("telescope.builtin")
     map("gd", pickers.lsp_definitions, "[G]oto [D]efinition")
     map("<leader>sS", pickers.lsp_dynamic_workspace_symbols, "[S]earch Workspace [S]ymbols")
+    -- Whole buffer, or just the selection in visual mode.
+    vim.keymap.set({ "n", "x" }, "<leader>f", function()
+      vim.lsp.buf.format({ timeout_ms = 3000 })
+      if vim.fn.mode() ~= "n" then vim.cmd.normal({ vim.keycode("<Esc>"), bang = true }) end
+    end, { buffer = args.buf, desc = "[F]ormat" })
   end,
 })
