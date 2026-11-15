@@ -1,5 +1,5 @@
--- Clear search highlight on Esc in normal mode.
-vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
+-- Clear search highlight on Esc in normal mode; still send Esc so plugins see it.
+vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR><Esc>")
 
 -- Quit and quit without saving.
 vim.keymap.set("n", "<leader>x", "<cmd>qa<CR>", { desc = "E[x]it" })
