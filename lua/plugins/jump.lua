@@ -367,12 +367,61 @@ local function jump_window()
   if target then vim.api.nvim_set_current_win(target.win) end
 end
 
+-- Label the syntax nodes around the cursor and select the chosen one. A label
+-- sits at its node's start, or at its end when the start is taken or off screen.
+local function jump_node()
+  local parser = vim.treesitter.get_parser(0, nil, { error = false })
+  if parser then parser:parse() end
+  local node = parser and vim.treesitter.get_node()
+  if not node then
+    vim.notify("No syntax tree here", vim.log.levels.WARN)
+    return
+  end
+
+  local mode, win = current_mode(), vim.api.nvim_get_current_win()
+  local top, bottom = vim.fn.line("w0"), vim.fn.line("w$")
+  local targets, taken, seen = {}, {}, {}
+  while node do
+    local sr, sc, er, ec = node:range()
+    if ec == 0 and er > sr then
+      er = er - 1
+      ec = #vim.fn.getline(er + 1)
+    end
+    ec = math.max(ec - 1, 0)
+    local range = { sr, sc, er, ec }
+    local id = table.concat(range, ":")
+    for _, pos in ipairs(seen[id] and {} or { { sr, sc }, { er, ec } }) do
+      local key = pos[1] .. ":" .. pos[2]
+      if not taken[key] and pos[1] + 1 >= top and pos[1] + 1 <= bottom then
+        taken[key] = true
+        targets[#targets + 1] = { win = win, lnum = pos[1] + 1, col = pos[2], range = range }
+        break
+      end
+    end
+    seen[id] = true
+    node = node:parent()
+  end
+  if #targets == 0 then return end
+
+  local target = targets[1]
+  if #targets > 1 then
+    assign(targets)
+    target = pick(targets)
+  end
+  if not target then return end
+  if mode == "x" then vim.cmd("normal! \27") end
+  vim.api.nvim_win_set_cursor(win, { target.range[1] + 1, target.range[2] })
+  vim.cmd("normal! v")
+  vim.api.nvim_win_set_cursor(win, { target.range[3] + 1, target.range[4] })
+end
+
 local modes = { "n", "x", "o" }
 vim.keymap.set(modes, "<leader>jl", jump_line, { desc = "[J]ump to [L]ine" })
 vim.keymap.set(modes, "<leader>jw", jump_word, { desc = "[J]ump to [W]ord" })
 vim.keymap.set(modes, "<leader>jj", jump_word, { desc = "[J]ump to Word ([J])" })
 vim.keymap.set(modes, "<leader>jc", jump_char, { desc = "[J]ump to [C]haracter" })
 vim.keymap.set(modes, "<leader>jd", jump_diagnostic, { desc = "[J]ump to [D]iagnostic" })
+vim.keymap.set(modes, "<leader>jn", jump_node, { desc = "[J]ump to Syntax [N]ode" })
 vim.keymap.set(modes, "<leader>js", jump_starts, { desc = "[J]ump to Word [S]tart" })
 vim.keymap.set(modes, "<leader>jt", jump_chars, { desc = "[J]ump to [T]wo Characters" })
 vim.keymap.set("n", "<leader>jW", jump_window, { desc = "[J]ump to [W]indow" })
