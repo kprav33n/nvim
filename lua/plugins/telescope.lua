@@ -1,5 +1,12 @@
 -- Telescope fuzzy finder.
-require("telescope").setup({})
+require("telescope").setup({
+  defaults = {
+    -- Stack the preview above the results.
+    layout_strategy = "vertical",
+    -- Keep the preview on shorter screens (default cutoff is 40 lines).
+    layout_config = { vertical = { preview_cutoff = 25 } },
+  },
+})
 
 -- Route vim.ui.select (code actions, :PyVenv, ...) through telescope.
 require("telescope").load_extension("ui-select")
