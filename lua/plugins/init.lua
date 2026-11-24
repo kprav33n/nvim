@@ -11,8 +11,7 @@ vim.pack.add({
   "https://github.com/NeogitOrg/neogit",
   "https://github.com/sindrets/diffview.nvim",       -- Git diff views (neogit dependency, optional)
   "https://github.com/lewis6991/gitsigns.nvim",      -- Git signs in the signcolumn
-  "https://github.com/supermaven-inc/supermaven-nvim",
-  "https://github.com/Huijiro/blink-cmp-supermaven",
+  "https://github.com/milanglacier/minuet-ai.nvim",  -- Claude inline completion
   "https://github.com/MunifTanjim/nui.nvim",         -- UI components (neo-tree dependency)
   { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
   "https://github.com/nvim-lualine/lualine.nvim",
@@ -30,7 +29,7 @@ require("plugins.blink")
 require("plugins.telescope")
 require("plugins.lsp")
 require("plugins.git")
-require("plugins.supermaven")
+require("plugins.minuet")
 require("plugins.claudecode")
 require("plugins.neo-tree")
 require("plugins.tabs")

@@ -10,14 +10,7 @@ require("blink.cmp").setup({
   },
 
   sources = {
-    default = { "lsp", "path", "supermaven", "snippets", "buffer" },
-    providers = {
-      supermaven = {
-        name = "supermaven",
-        module = "blink-cmp-supermaven",
-        async = true,
-      },
-    },
+    default = { "lsp", "path", "snippets", "buffer" },
   },
 
   keymap = {
@@ -29,10 +22,11 @@ require("blink.cmp").setup({
     ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },
 
     ['<Tab>'] = {
-      function(cmp)
-        local cp = require("supermaven-nvim.completion_preview")
-        if cp.has_suggestion() then
-          cp.on_accept_suggestion()
+      function()
+        -- Not loaded without a key file (plugins/minuet.lua).
+        local minuet = package.loaded["minuet.virtualtext"]
+        if minuet and minuet.action.is_visible() then
+          minuet.action.accept()
           return true
         end
         return false

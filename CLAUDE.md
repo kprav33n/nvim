@@ -43,6 +43,7 @@ lua/
     neo-tree.lua               -- file explorer + <leader>e keymaps
     lualine.lua                -- global statusline (catppuccin theme, gitsigns diff)
     claudecode.lua             -- Claude Code IDE integration + <leader>a keymaps
+    minuet.lua                 -- Claude inline completion for C/C++/CUDA/Python (~/.config/minuet/header)
     jump.lua                   -- custom label jumps (no plugin) + <leader>j keymaps
     flash.lua                  -- flash.nvim labelled jumps on s/S/r/R
     which-key.lua              -- includes group specs for other plugins
