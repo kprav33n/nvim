@@ -37,31 +37,6 @@ if vim.v.vim_did_enter == 1 then
   for _, tab in ipairs(vim.api.nvim_list_tabpages()) do name_tab(tab) end
 end
 
--- Carry tab names through sessions (only uppercase string globals are saved).
-vim.api.nvim_create_autocmd("User", {
-  group = group,
-  pattern = "SessionSavePre",
-  callback = function()
-    local names = {}
-    for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
-      local ok, name = pcall(vim.api.nvim_tabpage_get_var, tab, "tabname")
-      names[#names + 1] = ok and name or ""
-    end
-    vim.g.TabNames = vim.json.encode(names)
-  end,
-})
-vim.api.nvim_create_autocmd("SessionLoadPost", {
-  group = group,
-  callback = function()
-    local ok, names = pcall(vim.json.decode, vim.g.TabNames or "")
-    if not ok then return end
-    for i, tab in ipairs(vim.api.nvim_list_tabpages()) do
-      if names[i] and names[i] ~= "" then vim.api.nvim_tabpage_set_var(tab, "tabname", names[i]) end
-    end
-    vim.cmd.redrawtabline()
-  end,
-})
-
 -- Rename the current tab; an empty name reverts to the next free letter.
 local function rename_tab()
   vim.ui.input({ prompt = "Tab name: ", default = vim.t.tabname }, function(input)
