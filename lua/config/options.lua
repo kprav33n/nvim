@@ -97,6 +97,10 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "TermLeav
     if vim.fn.getcmdwintype() == "" then vim.cmd.checktime() end
   end,
 })
+-- Terminal mode fires none of the events above, so poll while in it.
+vim.fn.timer_start(1000, function()
+  if vim.api.nvim_get_mode().mode == "t" then vim.cmd.checktime() end
+end, { ["repeat"] = -1 })
 
 -- Experimental messages and command-line UI (no "Press ENTER" prompts).
 require("vim._core.ui2").enable()
